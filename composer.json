@@ -1,0 +1,23 @@
+{
+  "name": "dimvic/wp-pdo",
+  "type": "library",
+  "license": "MIT",
+  "description": "",
+  "authors": [
+    {
+      "name": "dimitris",
+      "email": "dimitris@unhooked.co"
+    }
+  ],
+  "require": {
+    "php": "^7.1"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "wppdo\\": "src/"
+    }
+  }
+}

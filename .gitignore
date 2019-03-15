@@ -1,1 +1,19 @@
+/wp-*
+
+# always-ignore extensions
+*.err
+*.log
+*.orig
+*.rej
+*.swo
+*.swp
+*.vi
+# *.zip
+*~
+~$*
+
+# OS or Editor folders
+._*
+.cache
 .DS_Store
+.idea
