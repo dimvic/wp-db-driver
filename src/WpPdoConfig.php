@@ -2,6 +2,10 @@
 
 namespace wppdo;
 
+if (!\defined('ABSPATH')) {
+    return;
+}
+
 class WpPdoConfig
 {
     public static function get_drivers(): array

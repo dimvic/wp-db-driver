@@ -2,6 +2,10 @@
 
 namespace wppdo;
 
+if (!\defined('ABSPATH')) {
+    return;
+}
+
 abstract class AbstractWpPdoDriver
 {
     abstract public function getPdoInstance(): ?\PDO;

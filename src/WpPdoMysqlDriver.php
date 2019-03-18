@@ -2,6 +2,10 @@
 
 namespace wppdo;
 
+if (!\defined('ABSPATH')) {
+    return;
+}
+
 class WpPdoMysqlDriver extends AbstractWpPdoDriver
 {
     /**

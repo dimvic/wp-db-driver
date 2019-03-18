@@ -1,18 +1,18 @@
 <?php
 /*
-	Plugin Name: WP DB Driver
-	Description: Enables PDO or MySQLi
-	Version:     2.1.0
+    Plugin Name: WP DB Driver
+    Description: Enables PDO or MySQLi
+    Version:     2.1.0
 
-	Plugin URI:  http://core.trac.wordpress.org/ticket/21663
+    Plugin URI:  http://core.trac.wordpress.org/ticket/21663
 
-	Author:      Marko Heijnen and Kurt Payne
-	Author URI:  http://core.trac.wordpress.org/ticket/21663
-	Donate link: https://markoheijnen.com/donate
+    Author:      Marko Heijnen and Kurt Payne
+    Author URI:  http://core.trac.wordpress.org/ticket/21663
+    Donate link: https://markoheijnen.com/donate
 
-	Text Domain: wp-db-driver
-	Domain Path: /languages
-	Network:     True
+    Text Domain: wp-db-driver
+    Domain Path: /languages
+    Network:     True
 */
 
 if (!defined('ABSPATH')) {
@@ -21,7 +21,6 @@ if (!defined('ABSPATH')) {
 
 class WP_DB_Driver_Plugin
 {
-
     public function __construct()
     {
         add_action('admin_menu', [$this, 'add_page']);
@@ -34,14 +33,14 @@ class WP_DB_Driver_Plugin
      * If the user has enabled emergency mode, then re-installs the db.php driver,
      * then automatically disable emergency mode.
      */
-    public function remove_emergency_cookie()
+    public function remove_emergency_cookie(): void
     {
         if (isset($_REQUEST['_wpnonce']) && wp_verify_nonce($_REQUEST['_wpnonce'], 'install-db-nonce')) {
             setcookie('wp-db-driver-emergency-override', '', time() - YEAR_IN_SECONDS, '/', $_SERVER['HTTP_HOST']);
         }
     }
 
-    public function add_page()
+    public function add_page(): void
     {
         if (is_plugin_active_for_network(plugin_basename(__FILE__))) {
             add_submenu_page(
@@ -63,15 +62,11 @@ class WP_DB_Driver_Plugin
         }
     }
 
-    public function page_overview()
+    public function page_overview(): void
     {
         if (!current_user_can('manage_options')) {
             wp_die(__('You do not have sufficient permissions to access this page.'));
         }
-
-        // Load if our custom wpdb wasn't loaded yet.
-        require_once dirname(__FILE__) . '/src/config.php';
-        require_once dirname(__FILE__) . '/src/interface-wp-db-driver.php';
 
         echo '<div class="wrap">';
 
@@ -91,37 +86,36 @@ class WP_DB_Driver_Plugin
         $do_install = (isset($_REQUEST['_wpnonce']) && wp_verify_nonce($_REQUEST['_wpnonce'], 'install-db-nonce'));
         $do_uninstall = (isset($_REQUEST['_wpnonce']) && wp_verify_nonce($_REQUEST['_wpnonce'], 'uninstall-db-nonce'));
 
-        if (is_super_admin() && ($do_install || $do_uninstall)) {
+        if (($do_install || $do_uninstall) && is_super_admin()) {
 
             // Ask for credentials, if necessary
             if (false === ($creds = request_filesystem_credentials($url, $method, false, false, $form_fields))) {
-
-                return true;
-            } elseif (!WP_Filesystem($creds)) {
+                return;
+            }
+            if (!WP_Filesystem($creds)) {
 
                 // The credentials are bad, ask again
                 request_filesystem_credentials($url, $method, true, false, $form_fields);
-                return true;
-            } else {
-                // Once we get here, we should have credentials, do the file system operations
-                global $wp_filesystem;
 
-                // Install
-                if ($do_install) {
-                    if ($wp_filesystem->put_contents($wp_filesystem->wp_content_dir() . '/db.php', file_get_contents(dirname(__FILE__) . '/wp-content/db.php'), FS_CHMOD_FILE)) {
-                        echo '<div class="updated"><p><strong>' . __('db.php has been installed.', 'wp-db-driver') . '</strong></p></div>';
-                    } else {
-                        echo '<div class="error"><p><strong>' . __("db.php couldn't be installed. Please try is manually", 'wp-db-driver') . '</strong></p></div>';
-                    }
+                return;
+            }
+            // Once we get here, we should have credentials, do the file system operations
+            global $wp_filesystem;
 
-                    // Remove
-                } elseif ($do_uninstall) {
-                    if ($wp_filesystem->delete($wp_filesystem->wp_content_dir() . '/db.php')) {
-                        echo '<div class="updated"><p><strong>' . __('db.php has been removed.', 'wp-db-driver') . '</strong></p></div>';
-                    } else {
-                        echo '<div class="error"><p><strong>' . __("db.php couldn't be removed. Please try is manually", 'wp-db-driver') . '</strong></p></div>';
-                    }
+            // Install
+            if ($do_install) {
+                if ($wp_filesystem->put_contents($wp_filesystem->wp_content_dir() . '/db.php', file_get_contents(__DIR__ . '/wp-content/db.php'), FS_CHMOD_FILE)) {
+                    echo '<div class="updated"><p><strong>' . __('db.php has been installed.', 'wp-db-driver') . '</strong></p></div>';
+                } else {
+                    echo '<div class="error"><p><strong>' . __("db.php couldn't be installed. Please try is manually", 'wp-db-driver') . '</strong></p></div>';
+                }
 
+                // Remove
+            } elseif ($do_uninstall) {
+                if ($wp_filesystem->delete($wp_filesystem->wp_content_dir() . '/db.php')) {
+                    echo '<div class="updated"><p><strong>' . __('db.php has been removed.', 'wp-db-driver') . '</strong></p></div>';
+                } else {
+                    echo '<div class="error"><p><strong>' . __("db.php couldn't be removed. Please try is manually", 'wp-db-driver') . '</strong></p></div>';
                 }
             }
         }
@@ -129,7 +123,7 @@ class WP_DB_Driver_Plugin
         echo '<div class="tool-box"><h3 class="title">' . __('Current driver', 'wp-db-driver') . '</h3></div>';
 
         if (file_exists(WP_CONTENT_DIR . '/db.php')) {
-            $crc1 = md5_file(dirname(__FILE__) . '/wp-content/db.php');
+            $crc1 = md5_file(__DIR__ . '/wp-content/db.php');
             $crc2 = md5_file(WP_CONTENT_DIR . '/db.php');
 
             if ($crc1 === $crc2) {
@@ -145,7 +139,6 @@ class WP_DB_Driver_Plugin
                 echo '</p>';
 
                 echo '</form>';
-
             } else {
                 echo '<form method="post" style="display: inline;">';
                 wp_nonce_field('install-db-nonce');
@@ -204,16 +197,14 @@ class WP_DB_Driver_Plugin
      * Try to delete the custom db.php drop-in.  This doesn't use the
      * WP_Filesystem, because it's not available.
      */
-    public static function deactivate()
+    public static function deactivate(): void
     {
         if (file_exists(WP_CONTENT_DIR . '/db.php')) {
-            $crc1 = md5_file(dirname(__FILE__) . '/wp-content/db.php');
+            $crc1 = md5_file(__DIR__ . '/wp-content/db.php');
             $crc2 = md5_file(WP_CONTENT_DIR . '/db.php');
 
-            if ($crc1 === $crc2) {
-                if (false === @unlink(WP_CONTENT_DIR . '/db.php')) {
-                    wp_die(__('Please remove the custom db.php drop-in before deactivating WP DB Driver', 'wp-db-driver'));
-                }
+            if ($crc1 === $crc2 && false === @unlink(WP_CONTENT_DIR . '/db.php')) {
+                wp_die(__('Please remove the custom db.php drop-in before deactivating WP DB Driver', 'wp-db-driver'));
             }
         }
     }
@@ -221,12 +212,12 @@ class WP_DB_Driver_Plugin
     /**
      * Uninstall
      */
-    public static function uninstall()
+    public static function uninstall(): void
     {
         global $wp_filesystem;
 
         if (file_exists(WP_CONTENT_DIR . '/db.php')) {
-            $crc1 = md5_file(dirname(__FILE__) . '/wp-content/db.php');
+            $crc1 = md5_file(__DIR__ . '/wp-content/db.php');
             $crc2 = md5_file(WP_CONTENT_DIR . '/db.php');
 
             if ($crc1 === $crc2) {
@@ -234,11 +225,10 @@ class WP_DB_Driver_Plugin
             }
         }
     }
-
 }
 
 if (is_admin()) {
-    $GLOBALS['wp_db_driver_plugin'] = new WP_DB_Driver_Plugin;
+    $GLOBALS['wp_db_driver_plugin'] = new WP_DB_Driver_Plugin();
 }
 
 register_deactivation_hook(__FILE__, ['WP_DB_Driver_Plugin', 'deactivate']);

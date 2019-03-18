@@ -4,6 +4,10 @@
 
 namespace wppdo;
 
+if (!\defined('ABSPATH')) {
+    return;
+}
+
 /**
  * @property AbstractWpPdoDriver|resource $dbh
  */

@@ -1,5 +1,9 @@
 <?php
 
+if (!\defined('ABSPATH')) {
+    return;
+}
+
 if (isset($_GET['wp-db-driver-emergency-override'])) {
     \setcookie('wp-db-driver-emergency-override', 1, 0, '/', $_SERVER['HTTP_HOST']);
 }
