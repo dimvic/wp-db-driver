@@ -8,27 +8,27 @@ if (!\defined('ABSPATH')) {
 
 class WpPdoConfig
 {
+    public const DRIVERS = [
+        'pdo_mysql' => WpPdoMysqlDriver::class,
+    ];
+
     public static function get_drivers(): array
     {
         global $custom_drivers;
 
-        $drivers = [
-            'pdo_mysql' => WpPdoMysqlDriver::class,
-        ];
-
-        if (isset($custom_drivers) && \is_array($custom_drivers)) {
-            $drivers = $custom_drivers + $drivers;
+        if (!isset($custom_drivers) || !\is_array($custom_drivers)) {
+            return static::DRIVERS;
         }
 
-        return $drivers;
+        return $custom_drivers + static::DRIVERS;
     }
 
     public static function get_current_driver()
     {
         $drivers = self::get_drivers();
 
-        if (\defined('WPDB_DRIVER')) {
-            $driver = WPDB_DRIVER;
+        if (\defined('WP_PDO_DRIVER')) {
+            $driver = WP_PDO_DRIVER;
 
             if (self::class_is_driver_and_supported($driver)) {
                 return $drivers[$driver];

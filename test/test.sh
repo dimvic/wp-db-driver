@@ -2,15 +2,15 @@
 
 DB_NAME=${DB_NAME:-wordpress_test}
 DB_USER=${DB_USER:-root}
-DB_PASS=${DB_PASS:-''}
+DB_PASS=${DB_PASS:-}
 DB_HOST=${DB_HOST:-localhost}
 WP_VERSION=${WP_VERSION:-5.1.1}
 WP_MULTISITE=${WP_MULTISITE:-0}
-WPDB_DRIVER=${WPDB_DRIVER:-pdo_mysql}
-PHP_VERSION=${PHP_VERSION:-$(php -r 'echo PHP_VERSION;')}
+WP_PDO_DRIVER=${WP_PDO_DRIVER:-pdo_mysql}
+PHP_VERSION=${PHP_VERSION:-$(php -r 'echo preg_replace("/^(\d+)\.(\d+).*$/", "\$1.\$2", PHP_VERSION);')}
 
 DIR=`readlink -f ..`
-WP_CORE_DIR="${HOME}/wp-db-driver-tests/${WP_VERSION}/${PHP_VERSION}"
+TEST_DIR="${HOME}/wp-pdo-tests/${WP_VERSION}/${PHP_VERSION}"
 
 set -ex
 
@@ -22,26 +22,28 @@ else
 fi
 
 install_tests() {
-	if [[ ! -d "${WP_CORE_DIR}" ]]; then
-		mkdir -p ${WP_CORE_DIR}
+	if [[ ! -d "${TEST_DIR}" ]]; then
+		mkdir -p ${TEST_DIR}
 
-		git clone --depth=1 --branch="${WP_VERSION}" git://develop.git.wordpress.org/ ${WP_CORE_DIR}
+		git clone --depth=1 --branch="${WP_VERSION}" git://develop.git.wordpress.org/ ${TEST_DIR}
 
-		cd ${WP_CORE_DIR}
+		cd ${TEST_DIR}
 
 		rm tests/phpunit/tests/db/charset.php
 		rm tests/phpunit/tests/formatting/WpReplaceInHtmlTags.php
 
 		cp wp-tests-config-sample.php wp-tests-config.php
-		echo "define( 'WPDB_DRIVER', '${WPDB_DRIVER}');" >> wp-tests-config.php
 		sed ${SED_OPT} "s/youremptytestdbnamehere/${DB_NAME}/" wp-tests-config.php
 		sed ${SED_OPT} "s/yourusernamehere/${DB_USER}/" wp-tests-config.php
 		sed ${SED_OPT} "s/yourpasswordhere/${DB_PASS}/" wp-tests-config.php
 		sed ${SED_OPT} "s/localhost/${DB_HOST}/" wp-tests-config.php
 		sed ${SED_OPT} "s/^.*DB_CHARSET.*$/define( 'DB_CHARSET', 'utf8mb4' );/" wp-tests-config.php
 		sed ${SED_OPT} "s/^.*DB_COLLATE.*$/define( 'DB_COLLATE', 'utf8mb4_unicode_ci' );/" wp-tests-config.php
+		echo "define( 'WP_PDO_DRIVER', '${WP_PDO_DRIVER}');" >> wp-tests-config.php
 
 		sed ${SED_OPT} "s/class wpdb_exposed_methods_for_testing extends wpdb /class wpdb_exposed_methods_for_testing extends \\\\wppdo\\\\WpPdo /" tests/phpunit/includes/utils.php
+
+		sed ${SED_OPT} 's/name="WP_RUN_CORE_TESTS" value="1"/name="WP_RUN_CORE_TESTS" value="0"/' phpunit.xml.dist
 	fi
 }
 
@@ -50,7 +52,7 @@ install_db() {
 	local PARTS=(${DB_HOST//\:/ })
 	local DB_HOSTNAME=${PARTS[0]};
 	local DB_SOCK_OR_PORT=${PARTS[1]};
-	local EXTRA=""
+	local EXTRA=''
 
 	if [[ ! -z ${DB_HOSTNAME} ]]; then
 		if [[ "${DB_SOCK_OR_PORT}" =~ ^[0-9]+$ ]]; then
@@ -68,17 +70,19 @@ install_db() {
 }
 
 install_plugin() {
-	cd "${DIR}"
+	cd "${TEST_DIR}"
 
-	mkdir -p "${WP_CORE_DIR}/src/wp-content/plugins/wp-db-driver"
+	rm -rf 'src/wp-content/plugins/wp-pdo'
 
-	rm -rf "${WP_CORE_DIR}/src/wp-content/plugins/wp-db-driver"
-	rm -rf "${WP_CORE_DIR}/build/wp-content/plugins/wp-db-driver"
+	mkdir -p 'src/wp-content/plugins'
 
-	cp -rf ./src "${WP_CORE_DIR}/src/wp-content/plugins/wp-db-driver"
-	cp ./db.php "${WP_CORE_DIR}/src/wp-content/db.php"
+	cp -rf "${DIR}/src" 'src/wp-content/plugins/wp-pdo'
+	cp -f "${DIR}/db.php" 'src/wp-content/db.php'
 }
 
 install_tests
 install_db
 install_plugin
+
+cd ${TEST_DIR}
+TESTING=true phpunit -v --group wpdb

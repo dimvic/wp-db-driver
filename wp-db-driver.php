@@ -36,7 +36,7 @@ class WP_DB_Driver_Plugin
     public function remove_emergency_cookie(): void
     {
         if (isset($_REQUEST['_wpnonce']) && wp_verify_nonce($_REQUEST['_wpnonce'], 'install-db-nonce')) {
-            setcookie('wp-db-driver-emergency-override', '', time() - YEAR_IN_SECONDS, '/', $_SERVER['HTTP_HOST']);
+            setcookie('wp-pdo-sos', '', time() - YEAR_IN_SECONDS, '/', $_SERVER['HTTP_HOST']);
         }
     }
 

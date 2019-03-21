@@ -152,9 +152,10 @@ class WpPdoMysqlDriver extends AbstractWpPdoDriver
         try {
             $this->result = $this->dbh->query($query);
         } catch (\Exception $e) {
-            if (WP_DEBUG) {
+            // do not print errors while testing
+            if (WP_DEBUG && !($_SERVER['TESTING'] ?? false)) {
                 /** @noinspection ForgottenDebugOutputInspection */
-                \error_log('Error executing query: ' . $e->getCode() . ' - ' . $e->getMessage() . ' in query ' . $query);
+                \error_log("\nError executing query: {$e->getCode()} - {$e->getMessage()} in query:\n{$query}\n");
             }
 
             return false;
@@ -255,7 +256,7 @@ class WpPdoMysqlDriver extends AbstractWpPdoDriver
 
     public static function get_name(): string
     {
-        return '\PDO - MySQL';
+        return 'pdo_mysql';
     }
 
     public static function is_supported(): bool

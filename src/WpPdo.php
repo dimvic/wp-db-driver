@@ -77,7 +77,7 @@ class WpPdo extends \wpdb
 
     public function set_charset($dbh, $charset = null, $collate = null): void
     {
-        /** @var \wpdb_driver_pdo_mysql $dbh */
+        /** @var AbstractWpPdoDriver $dbh */
         if (!isset($charset)) {
             $charset = $this->charset;
         }
@@ -266,7 +266,7 @@ class WpPdo extends \wpdb
             } elseif (\defined('WP_USE_EXT_MYSQL') && !WP_USE_EXT_MYSQL) {
                 $attempt_fallback = false;
             }
-            $drivers = \WP_DB_Driver_Config::get_drivers();
+            $drivers = WpPdoConfig::get_drivers();
             $driver = 'wpdb_driver_pdo_mysql';
             /** @noinspection PhpIncludeInspection */
             include_once $drivers[$driver];
